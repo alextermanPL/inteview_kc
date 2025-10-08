@@ -25,6 +25,8 @@ subprojects {
         val testImplementation by configurations
 
         implementation(platform("io.quarkus.platform:quarkus-bom:3.5.0"))
+        implementation(platform("io.quarkus.platform:quarkus-camel-bom:3.5.0"))
+
         implementation("io.quarkus:quarkus-kotlin")
         implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
         implementation("io.quarkus:quarkus-arc")
