@@ -39,7 +39,13 @@ subprojects {
     }
 
     configure<JavaPluginExtension> {
+        toolchain.languageVersion.set(JavaLanguageVersion.of(17))
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    // Kotlin JVM toolchain pinned to Java 17
+    extensions.configure(org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension::class.java) {
+        jvmToolchain(17)
     }
 }
