@@ -118,18 +118,63 @@ Create a **token-service** using **Apache Camel** and **Kotlin** that:
 After implementation, the full system should run with:
 
 ```bash
-# Start Kafka
-docker-compose up -d
+# Start infrastructure (Postgres, Keycloak, Zookeeper, Kafka)
+docker compose up -d postgres keycloak zookeeper kafka
 
 # Start transactions service
 ./gradlew :transactions-service:quarkusDev
 
-# Start your token service
+# Start your token service (Camel + Quarkus)
 ./gradlew :token-service:quarkusDev
 
 # Test the integration (open in browser)
 http://localhost:8080/realms/finance-app/protocol/openid-connect/auth?client_id=finance-client&redirect_uri=http://localhost:8081/token&response_type=code&scope=openid
 ```
+
+## Token Service Details
+
+- Endpoint: `GET /token?code=<auth_code>`
+- Flow:
+  - Exchanges the auth code for a JWT access token in Keycloak.
+  - Fetches transactions from `http://localhost:8082/api/transactions` with `Authorization: Bearer <token>`.
+  - Publishes `{ "user": "...", "transactions": [ ... ] }` to Kafka topic `user-transactions`.
+  - Returns `{ "status": "ok", "message": "Transactions published" }` on success.
+- Configuration: see `token-service/src/main/resources/application.properties`.
+
+## Key Management
+
+Keys are automatically managed:
+1. Run `./setup.sh` to generate and copy keys
+2. Gradle automatically copies keys on build (`processResources` task)
+3. Keys are ignored in Git for security
+
+To regenerate keys:
+```bash
+rm -rf keys/ token-service/src/main/resources/keys/
+./setup.sh
+```
+
+## Running Tests
+
+Processor unit tests and an end-to-end route test are included for token-service.
+
+```bash
+# Run all token-service tests
+./gradlew :token-service:test
+```
+
+What is tested:
+- Processors:
+  - TokenExchangeProcessor: parses token and sets Authorization.
+  - TransactionFetcherProcessor: propagates JSON body and handles non-2xx.
+  - KafkaPublisherProcessor: wraps message and sets Kafka key.
+- Route E2E:
+  - Uses CDI alternatives for processors (no external HTTP calls).
+  - Intercepts `kafka:*` endpoints to `mock:kafka` and asserts a message is produced.
+
+Troubleshooting tests:
+- Ensure JDK 17 is installed and `JAVA_HOME` is set.
+- If port conflicts occur while running `@QuarkusTest`, stop other dev services.
 
 ### Resources
 

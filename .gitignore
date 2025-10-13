@@ -51,3 +51,8 @@ lost+found/
 manual/
 token-microservice/
 
+# Generated keys
+keys/
+token-service/src/main/resources/keys/
+
+

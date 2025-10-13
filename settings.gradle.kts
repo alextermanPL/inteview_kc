@@ -16,3 +16,4 @@ pluginManagement {
 rootProject.name = "finance-microservices"
 
 include("transactions-service")
+include("token-service")
